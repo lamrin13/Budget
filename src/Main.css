@@ -1,0 +1,52 @@
+.navbar {
+    background-color: #343a40;
+  }
+  
+  .navbar.light {
+    background-color: #f8f9fa;
+  }
+  
+  .navbar-brand {
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .navbar.light .navbar-brand {
+    color: #000000;
+  }
+  
+  .navbar-nav .nav-link {
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .navbar.light .navbar-nav .nav-link {
+    color: #000000;
+  }
+  
+  .navbar-nav .nav-link.active {
+    color: #ffc107;
+  }
+  
+  .navbar-nav .nav-link:hover {
+    color: #ffc107;
+  }
+  
+  .container {
+    margin-top: 20px;
+  }
+  
+  body.dark {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
+  
+  body.light {
+    background-color: #ffffff;
+    color: #000000;
+  }
+  
+  .form-check-input {
+    cursor: pointer;
+  }
+  
