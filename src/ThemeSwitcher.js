@@ -1,60 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTheme } from './ThemeContext';
+import { Typeahead } from 'react-bootstrap-typeahead';
 
+const ThemeSwitcher = ({ tabData, setTabData }) => {
 
-const ThemeSwitcher = () => {
-  const [tabsConfig, setTabsConfig] = useState([]);
-  const [activeTab, setActiveTab] = useState('');
-  const [tabData, setTabData] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const [isAdding, setIsAdding] = useState(false);
   const [newData, setNewData] = useState({ 'Date': '', 'Amount': 0, 'Description': '' });
   const itemsPerPage = 10;
   const tablesData = useRef(new Map());
-
+  const [selected, setSelected] = useState([]);
+  const [options, setOptions] = useState([]);
+  // const options = [
+  //   { id: 1, label: 'Alabama' },
+  //   { id: 2, label: 'Alaska' },
+  //   { id: 3, label: 'Arizona' },
+  //   { id: 4, label: 'Arkansas' },
+  //   { id: 5, label: 'California' },
+  //   // Add more options as needed
+  // ];
   useEffect(() => {
-    const fetchTabsConfig = async () => {
-      try {
-        const response = await fetch('https://go-sheet-wlmvfjxx6q-pd.a.run.app/getTabs');
-        const data = await response.json();
-        const filtered = data.filter(x => !x.startsWith('*'))
-        setTabsConfig(filtered);
-        filtered.forEach((element) => {
-          fetchData(element, filtered[0])
-        });
-      } catch (error) {
-        console.error('Error fetching tabs configuration:', error);
-      }
-    };
+    fetchOptions()
+    fetchData()
+  }, [])
 
-    fetchTabsConfig();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab) {
-      const activeTabConfig = tabsConfig.find(tab => tab === activeTab);
-      if (activeTabConfig && tablesData.current.has(activeTab)) {
-        setTabData(prevData => ({ ...prevData, [activeTab]: tablesData.current.get(activeTab) }));
-      }
-    }
-  }, [activeTab, tabsConfig]);
-
-  const fetchData = async (tabName, firstTab) => {
+  const fetchOptions = async () => {
     try {
-      const response = await fetch("https://go-sheet-wlmvfjxx6q-pd.a.run.app/?month=" + tabName);
+      const response = await fetch("https://go-sheet-wlmvfjxx6q-pd.a.run.app/categories");
+      const data = await response.json();
+      const options = data.map(x => ({
+        id: x, label: x
+      }));
+      setOptions(options);
+    } catch (error) {
+      console.error("Error fetching categories: ", error)
+    }
+  }
+  const fetchData = async () => {
+    try {
+      const response = await fetch("https://go-sheet-wlmvfjxx6q-pd.a.run.app/all");
       const data = await response.json();
       const filtered = data.map(x => ({
-        Date: x.Date,
-        Amount: x.Income > 0 ? x.Income : -x.Spend,
-        Description: x.Description
+        Date: x.date,
+        Amount: x.income > 0 ? x.income : -x.spend,
+        Description: x.remark
       }));
-      tablesData.current.set(tabName, filtered)
-      if (tabName === firstTab) {
-        setActiveTab(tabName);
-        setTabData(prevData => ({ ...prevData, [activeTab]: tablesData.current.get(activeTab) }));
-      }
+      setTabData(filtered)
+      // tablesData.current.set(tabName, filtered)
     } catch (error) {
-      console.error(`Error fetching data for ${tabName}:`, error);
+      console.error(`Error fetching data:`, error);
     }
   }
 
@@ -82,34 +76,34 @@ const ThemeSwitcher = () => {
     return data;
   };
 
-  const handleAddRow = () => {
-    setIsAdding(true);
-  };
 
-  const handleCancle = (e) => {
-    e.preventDefault();
-    setIsAdding(false)
-  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setTabData(prevData => ({
-      ...prevData,
-      [activeTab]: [...(prevData[activeTab] || []), newData]
-    }));
+    // setTabData(prevData => ({
+    //   ...prevData,
+    //   [activeTab]: [...(prevData[activeTab] || []), newData]
+    // }));
     const body = JSON.stringify([{
       Date: newData.Date,
       Income: newData.Amount > 0 ? Number(newData.Amount) : 0,
       Spend: newData.Amount < 0 ? Number(-newData.Amount) : 0,
-      Remark: newData.Description
+      Remark: selected[0].label
     }]);
-    fetch("https://go-sheet-wlmvfjxx6q-pd.a.run.app/?month=" + activeTab, {
+    // console.log(body)
+    fetch("https://go-sheet-wlmvfjxx6q-pd.a.run.app/", {
       method: "POST",
       body: body,
       headers: { "Content-type": "application/json" }
     });
-    setNewData({ 'Date': '', 'Income': 0, 'Spend': 0, 'Description': '' });
-    setIsAdding(false);
+
+    setTabData(prevData => [...prevData, {
+      Date: newData.Date,
+      Amount: Number(newData.Amount),
+      Description: selected[0].label
+    }]);
+    setNewData({ 'Date': '', 'Amount': 0, 'Description': '' });
+    setSelected([])
   };
 
   const handleChange = (e) => {
@@ -121,14 +115,17 @@ const ThemeSwitcher = () => {
   };
 
   const renderTable = (data) => {
+    // console.log(data)
     if (!data) {
       return <p>Loading...</p>;
     }
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    // console.log(data)
     const currentItems = sortedData(data).slice(indexOfFirstItem, indexOfLastItem);
 
+    // const currentItems = data
     return (
       <div>
         <table className="table">
@@ -148,7 +145,7 @@ const ThemeSwitcher = () => {
                 <td>{item.Description}</td>
               </tr>
             ))}
-            {isAdding && (
+            {(
               <tr>
                 <td>
                   <input type="date" className="form-control" name="Date" value={newData.Date} onChange={handleChange} />
@@ -158,17 +155,23 @@ const ThemeSwitcher = () => {
                 </td>
                 <td>
                   <div className='input-group'>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="Description"
-                      value={newData.Description}
-                      onChange={handleChange}
+                    <Typeahead
+                      id="basic-typeahead"
+                      labelKey="label"
+                      multiple={false}
+                      options={options}
+                      placeholder="Category"
+                      selected={selected}
+                      onChange={setSelected}
                     />
                     <button className="btn btn-success me-1 input-group-append" onClick={handleSubmit}>
                       Save
                     </button>
-                    <button className="btn btn-secondary input-group-append" onClick={() => setIsAdding(false)}>
+                    <button className="btn btn-secondary input-group-append" onClick={() => {
+                      setNewData({ 'Date': '', 'Amount': 0, 'Description': '' });
+                      setSelected([]);
+                    }
+                    }>
                       Cancel
                     </button>
                   </div>
@@ -188,27 +191,12 @@ const ThemeSwitcher = () => {
   };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
+  const { theme } = useTheme();
   return (
-    <div className="card m-3">
-      <div className="card-header">
-        <ul className="nav nav-tabs card-header-tabs">
-          {tabsConfig.map((tab) => (
-            <li key={tab} className="nav-item">
-              <a
-                className={`nav-link ${activeTab === tab ? 'active' : ''}`}
-                href="#"
-                onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-              >
-                {tab}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className={`card m-3 ${theme}`}>
       <div className="card-body">
-        <button className="btn btn-primary mb-1" onClick={handleAddRow}>Add</button>
-        {activeTab && renderTable(tabData[activeTab])}
+        {/* <button className="btn btn-primary mb-1" onClick={handleAddRow}>Add</button> */}
+        {renderTable(tabData)}
       </div>
     </div>
   );
@@ -225,7 +213,7 @@ const Pagination = ({ itemsPerPage, totalItems, currentPage, paginate }) => {
       <ul className="pagination">
         {pageNumbers.map(number => (
           <li key={number} className={`page-item ${currentPage === number ? 'active' : ''}`}>
-            <a onClick={() => paginate(number)} href="#" className="page-link">
+            <a role='button' onClick={() => paginate(number)} className="page-link">
               {number}
             </a>
           </li>

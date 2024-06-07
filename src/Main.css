@@ -49,4 +49,12 @@
   .form-check-input {
     cursor: pointer;
   }
-  
+
+  /* .dark {
+    background-color: #121212;
+    color: #e0e0e0;
+    border: #e0e0e0;
+  } */
+  p{
+    line-height: 1;
+  }
