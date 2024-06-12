@@ -6,15 +6,16 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import './Main.css';
 
 const Main = () => {
-  const [sharedState, setSharedState] = useState([])
+  const [tabData, setTabData] = useState([])
+  const [groupedData, setGroupedData] = useState({})
   return (
     <ThemeProvider>
       <HashRouter>
         <div className="app-container">
           <Navigation />
           <Routes>
-            <Route exact path="/overview" element={<Overview data={sharedState}/>} />
-            <Route exact path="/" element={<ThemeSwitcher tabData={sharedState} setTabData={setSharedState}/>} />
+            <Route exact path="/" element={<Overview setTabData={setTabData} setGroupedData={setGroupedData}/>} />
+            <Route exact path="/breakdown" element={<ThemeSwitcher tabData={tabData} setTabData={setTabData} groupedData={groupedData}/>} />
           </Routes>
         </div>
       </HashRouter>
@@ -32,12 +33,13 @@ const Navigation = () => {
       </button>
       <div className="collapse navbar-collapse" id="navbarNav">
         <ul className="navbar-nav">
+        <li className="nav-item active">
+            <Link className="nav-link" to="/">Overview</Link>
+          </li>
         <li className="nav-item">
-            <Link className="nav-link" to="/">Breakdown</Link>
+            <Link className="nav-link" to="/breakdown">Breakdown</Link>
           </li>
-          <li className="nav-item active">
-            <Link className="nav-link" to="/overview">Overview</Link>
-          </li>
+          
           
         </ul>
       </div>
